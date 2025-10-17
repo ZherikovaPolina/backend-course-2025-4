@@ -59,5 +59,3 @@ const server = http.createServer((request, response) => {
 server.listen(options.port, options.host, () => {
   console.log(`Server running: http://${options.host}:${options.port}`);
 });
-
-
