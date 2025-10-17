@@ -1,6 +1,8 @@
 const { program } = require('commander');
 const fs = require('fs');
 const http = require('http');
+const url = require('url');
+const parser = require('fast-xml-parser');
 
 program
   .requiredOption('-i, --input <file>', 'Path to the file to read')
@@ -16,20 +18,46 @@ if (!fs.existsSync(options.input)) {
   process.exit(1);
 }
 
-try {
-  const data = fs.readFileSync(options.input, 'utf8');
-  console.log('File read successfully', options.input);
-} catch (err) {
-  console.error("Can't read input file");
-  process.exit(1);
-}
-
 const server = http.createServer((request, response) => {
-  response.writeHead(200, 'OK', { 'Content-Type': 'text/plain; charset=utf-8' });
-  response.end('Server is running!\n');
+  const query = url.parse(request.url, true).query;
+
+  fs.readFile(options.input, 'utf8', (err, textData) => {
+    if (err) {
+      response.writeHead(500, 'Error', { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end("Can't read input file");
+      return;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(textData);
+    } catch {
+      response.writeHead(500, 'Error', { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('Error JSON');
+      return;
+    }
+
+    if (query.furnished === 'true') {
+      data = data.filter(h => h.furnishingstatus === 'furnished');
+    }
+
+    if (query.max_price) {
+      const maxPrice = Number(query.max_price);
+      if (!isNaN(maxPrice)) {  
+        data = data.filter(h => Number(h.price) < maxPrice);
+      }
+    }
+
+    const builder = new parser.XMLBuilder({ ignoreAttributes: false, format: true });
+    const xmlData = builder.build({ houses: { house: data } });
+
+    response.writeHead(200, 'OK', { 'Content-Type': 'application/xml; charset=utf-8' });
+    response.end(xmlData);
+  });
 });
 
 server.listen(options.port, options.host, () => {
   console.log(`Server running: http://${options.host}:${options.port}`);
 });
+
 
