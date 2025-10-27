@@ -48,6 +48,12 @@ const server = http.createServer((request, response) => {
       }
     }
 
+    const filteredData = data.map(h => ({
+    area: h.area,
+    price: h.price,
+    furnished: h.furnishingstatus
+  }));
+
     const builder = new parser.XMLBuilder({ ignoreAttributes: false, format: true });
     const xmlData = builder.build({ houses: { house: data } });
 
