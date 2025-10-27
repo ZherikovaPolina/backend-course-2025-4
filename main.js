@@ -37,21 +37,28 @@ const server = http.createServer((request, response) => {
       return;
     }
 
+    let filteredData;
     if (query.furnished === 'true') {
-      data = data.filter(h => h.furnishingstatus === 'furnished');
+      filteredData = data
+        .filter(h => h.furnishingstatus === 'furnished')
+        .map(h => ({
+          area: h.area,
+          price: h.price,
+          furnished: h.furnishingstatus
+        }));
+    } else {
+      filteredData = data.map(h => ({
+        area: h.area,
+        price: h.price
+      }));
     }
 
     if (query.max_price) {
       const maxPrice = Number(query.max_price);
-      if (!isNaN(maxPrice)) {  
-        data = data.filter(h => Number(h.price) < maxPrice);
+      if (!isNaN(maxPrice)) {
+        filteredData = filteredData.filter(h => Number(h.price) < maxPrice);
       }
     }
-    const filteredData = data.map(h => ({
-    area: h.area,
-    price: h.price,
-    furnished: h.furnishingstatus
-  }));
 
     const builder = new parser.XMLBuilder({ ignoreAttributes: false, format: true });
     const xmlData = builder.build({ houses: { house: filteredData } });
