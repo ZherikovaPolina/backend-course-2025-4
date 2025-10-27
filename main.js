@@ -47,7 +47,6 @@ const server = http.createServer((request, response) => {
         data = data.filter(h => Number(h.price) < maxPrice);
       }
     }
-
     const filteredData = data.map(h => ({
     area: h.area,
     price: h.price,
@@ -55,7 +54,7 @@ const server = http.createServer((request, response) => {
   }));
 
     const builder = new parser.XMLBuilder({ ignoreAttributes: false, format: true });
-    const xmlData = builder.build({ houses: { house: data } });
+    const xmlData = builder.build({ houses: { house: filteredData } });
 
     response.writeHead(200, 'OK', { 'Content-Type': 'application/xml; charset=utf-8' });
     response.end(xmlData);
