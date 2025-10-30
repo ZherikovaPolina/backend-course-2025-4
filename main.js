@@ -37,21 +37,12 @@ const server = http.createServer((request, response) => {
       return;
     }
 
-    let filteredData;
-    if (query.furnished === 'true') {
-      filteredData = data
-        .filter(h => h.furnishingstatus === 'furnished')
-        .map(h => ({
-          area: h.area,
-          price: h.price,
-          furnished: h.furnishingstatus
-        }));
-    } else {
-      filteredData = data.map(h => ({
-        area: h.area,
-        price: h.price
-      }));
-    }
+    let filteredData = data.filter(h => {
+      if (query.furnished === 'true') {
+        return h.furnishingstatus === 'furnished';
+      }
+      return true; 
+    });
 
     if (query.max_price) {
       const maxPrice = Number(query.max_price);
@@ -60,8 +51,21 @@ const server = http.createServer((request, response) => {
       }
     }
 
+    const result = filteredData.map(h => {
+      const obj = {
+        area: h.area,
+        price: h.price
+      };
+
+      if (query.furnished !== 'false') {
+        obj.furnished = h.furnishingstatus;
+      }
+
+      return obj;
+    });
+
     const builder = new parser.XMLBuilder({ ignoreAttributes: false, format: true });
-    const xmlData = builder.build({ houses: { house: filteredData } });
+    const xmlData = builder.build({ houses: { house: result } });
 
     response.writeHead(200, 'OK', { 'Content-Type': 'application/xml; charset=utf-8' });
     response.end(xmlData);
